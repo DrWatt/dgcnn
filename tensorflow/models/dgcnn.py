@@ -72,7 +72,6 @@ class MatMult(tf.keras.layers.Layer):
 
   def __init__(self):
       super(MatMult, self).__init__()
-      #self.input1 = tf.cast(input1, dtype=tf.float32)
   def build(self, input_shape):  # Create the state of the layer (weights)
       print("Matmult input shape",input_shape)
 
@@ -91,29 +90,15 @@ def build_model(point_cloud, is_training, bn_decay=None):
   num_point = point_cloud.shape[1]
   end_points = {}
   k = 20
-  # adj_matrix = tf_util.pairwise_distance(point_cloud)
-  # nn_idx = tf_util.knn(adj_matrix, k=k)
-  # edge_feature = tf_util.get_edge_feature(point_cloud, nn_idx=nn_idx, k=k)
   
   inputs = tf.keras.layers.Input((point_cloud.shape[1],3,1))
-  #asd = Linear(32)(inputs)
   edge_feature = EdgeComp(k=k)(inputs)
-  # with tf.variable_scope('transform_net1') as sc:
-  #   transform = input_transform_net(edge_feature, is_training, bn_decay, K=3)
+
   transform = input_transform_net(edge_feature, K=3)
   
-  # point_cloud_transformed = tf.matmul(point_cloud, transform)
   point_cloud_transformed = MatMult()([inputs,transform])
-  # adj_matrix = tf_util.pairwise_distance(point_cloud_transformed)
-  # nn_idx = tf_util.knn(adj_matrix, k=k)
-  # edge_feature = tf_util.get_edge_feature(point_cloud_transformed, nn_idx=nn_idx, k=k)
+
   edge_feature = EdgeComp(k=k)(point_cloud_transformed)
-  
-  # inputs = tf.keras.layers.Input((3,3,1))
-  # net = tf_util.conv2d(edge_feature, 64, [1,1],
-  #                      padding='VALID', stride=[1,1],
-  #                      bn=True, is_training=is_training,
-  #                      scope='dgcnn1', bn_decay=bn_decay)
   
   x = tf.keras.layers.Conv2D(64, kernel_size=(1,1), use_bias=True, padding='valid')(edge_feature)
   x = tf.keras.layers.Activation('relu')(x)
@@ -122,18 +107,10 @@ def build_model(point_cloud, is_training, bn_decay=None):
   
   x = tf.math.reduce_max(x, axis=-2, keepdims=True)
   net1 = x
-
-  # adj_matrix = tf_util.pairwise_distance(net)
-  # nn_idx = tf_util.knn(adj_matrix, k=k)
-  # edge_feature = tf_util.get_edge_feature(net, nn_idx=nn_idx, k=k)
   
   x = EdgeComp(k=k)(x)
 
-  # net = tf_util.conv2d(edge_feature, 64, [1,1],
-  #                      padding='VALID', stride=[1,1],
-  #                      bn=True, is_training=is_training,
-  #                      scope='dgcnn2', bn_decay=bn_decay)
-  # net = tf.reduce_max(net, axis=-2, keep_dims=True)
+
   x = tf.keras.layers.Conv2D(64, kernel_size=(1,1), use_bias=True, padding='valid')(x)
   x = tf.keras.layers.Activation('relu')(x)
   x = tf.keras.layers.BatchNormalization()(x)
@@ -141,19 +118,9 @@ def build_model(point_cloud, is_training, bn_decay=None):
   
   x = tf.math.reduce_max(x, axis=-2, keepdims=True)
   net2 = x
- 
-  # adj_matrix = tf_util.pairwise_distance(net)
-  # nn_idx = tf_util.knn(adj_matrix, k=k)
-  # edge_feature = tf_util.get_edge_feature(net, nn_idx=nn_idx, k=k)  
   
   x = EdgeComp(k=k)(x)
 
-  # net = tf_util.conv2d(edge_feature, 64, [1,1],
-  #                      padding='VALID', stride=[1,1],
-  #                      bn=True, is_training=is_training,
-  #                      scope='dgcnn3', bn_decay=bn_decay)
-  # net = tf.reduce_max(net, axis=-2, keep_dims=True)
-  
   x = tf.keras.layers.Conv2D(64, kernel_size=(1,1), use_bias=True, padding='valid')(x)
   x = tf.keras.layers.Activation('relu')(x)
   x = tf.keras.layers.BatchNormalization()(x)
@@ -161,18 +128,9 @@ def build_model(point_cloud, is_training, bn_decay=None):
   
   x = tf.math.reduce_max(x, axis=-2, keepdims=True)
   net3 = x
-
-  # adj_matrix = tf_util.pairwise_distance(net)
-  # nn_idx = tf_util.knn(adj_matrix, k=k)
-  # edge_feature = tf_util.get_edge_feature(net, nn_idx=nn_idx, k=k)  
   
   x = EdgeComp(k=k)(x)
   
-  # net = tf_util.conv2d(edge_feature, 128, [1,1],
-  #                      padding='VALID', stride=[1,1],
-  #                      bn=True, is_training=is_training,
-  #                      scope='dgcnn4', bn_decay=bn_decay)
-  # net = tf.reduce_max(net, axis=-2, keep_dims=True)
   x = tf.keras.layers.Conv2D(128, kernel_size=(1,1), use_bias=True, padding='valid')(x)
   x = tf.keras.layers.Activation('relu')(x)
   x = tf.keras.layers.BatchNormalization()(x)
@@ -181,12 +139,6 @@ def build_model(point_cloud, is_training, bn_decay=None):
   x = tf.math.reduce_max(x, axis=-2, keepdims=True)
   net4 = x
 
-  # net = tf_util.conv2d(tf.concat([net1, net2, net3, net4], axis=-1), 1024, [1, 1], 
-  #                      padding='VALID', stride=[1,1],
-  #                      bn=True, is_training=is_training,
-  #                      scope='agg', bn_decay=bn_decay)
- 
-  # net = tf.reduce_max(net, axis=1, keep_dims=True)
   x = tf.keras.layers.Concatenate()([net1, net2, net3, net4])
   x = tf.keras.layers.Conv2D(1024, kernel_size=(1,1), use_bias=True, padding='valid')(x)
   x = tf.keras.layers.Activation('relu')(x)
@@ -196,29 +148,18 @@ def build_model(point_cloud, is_training, bn_decay=None):
   x = tf.math.reduce_max(x, axis=1, keepdims=True)
 
   # MLP on global point cloud vector
-  # net = tf.reshape(net, [batch_size, -1]) 
   x = tf.keras.layers.Flatten()(x)
 
-  # net = tf_util.fully_connected(net, 512, bn=True, is_training=is_training,
-  #                               scope='fc1', bn_decay=bn_decay)
   x = tf.keras.layers.Dense(512,activation='relu')(x)
   x = tf.keras.layers.BatchNormalization()(x)
-  # net = tf_util.dropout(net, keep_prob=0.5, is_training=is_training,
-  #                        scope='dp1')
   x = tf.keras.layers.Dropout(0.5)(x)
-  # net = tf_util.fully_connected(net, 256, bn=True, is_training=is_training,
-  #                               scope='fc2', bn_decay=bn_decay)
   x = tf.keras.layers.Dense(256,activation='relu')(x)
   x = tf.keras.layers.BatchNormalization()(x)
-  # net = tf_util.dropout(net, keep_prob=0.5, is_training=is_training,
-  #                       scope='dp2')
   x = tf.keras.layers.Dropout(0.5)(x)
-  # net = tf_util.fully_connected(net, 40, activation_fn=None, scope='fc3')
   x = tf.keras.layers.Dense(40)(x)
 
   model = tf.keras.Model(inputs=inputs, outputs = x, name='dgcnn')
   model.summary()
-  #return net, end_points
   return model
 #%%
 
@@ -242,24 +183,10 @@ if __name__=='__main__':
   label_feed[label_feed<0.5] = 0
   label_feed = label_feed.astype(np.int32)
 
-  # # np.save('./debug/input_feed.npy', input_feed)
-  # input_feed = np.load('./debug/input_feed.npy')
-  # print input_feed
   print(input_feed)
-  # with tf.Graph().as_default(): tf.placeholder(tf.float32, shape=(batch_size, num_point, 3))
-  #input_pl, label_pl = placeholder_inputs(batch_size, num_pt)
-  #pos, ftr = get_model(input_pl, tf.constant(True))
-    # loss = get_loss(logits, label_pl, None)
-  build_model(input_feed,True)
-    # with tf.Session() as sess:
-    #   sess.run(tf.global_variables_initializer())
-    #   feed_dict = {input_pl: input_feed, label_pl: label_feed}
-    #   res1, res2 = sess.run([pos, ftr], feed_dict=feed_dict)
-    #   print res1.shape
-    #   print res1
 
-    #   print res2.shape
-    #   print res2
+  build_model(input_feed,True)
+
 
 
 
