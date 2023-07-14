@@ -84,12 +84,12 @@ class MatMult(tf.keras.layers.Layer):
 
 #%%
 
-def build_model(point_cloud, is_training, bn_decay=None):
+def build_model(point_cloud, is_training):
   """ Classification PointNet, input is BxNx3, output Bx40 """
   batch_size = point_cloud.shape[0]
   num_point = point_cloud.shape[1]
   end_points = {}
-  k = 20
+  k = 5
   
   inputs = tf.keras.layers.Input((point_cloud.shape[1],3,1))
   edge_feature = EdgeComp(k=k)(inputs)
@@ -173,8 +173,8 @@ def get_loss(pred, label, end_points):
 
 
 if __name__=='__main__':
-  batch_size = 2
-  num_pt = 124
+  batch_size = 500
+  num_pt = 19
   pos_dim = 3
 
   input_feed = np.random.rand(batch_size, num_pt, pos_dim)
@@ -183,9 +183,8 @@ if __name__=='__main__':
   label_feed[label_feed<0.5] = 0
   label_feed = label_feed.astype(np.int32)
 
-  print(input_feed)
 
-  build_model(input_feed,True)
+  model = build_model(input_feed,True)
 
 
 
